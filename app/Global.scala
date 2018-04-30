@@ -82,7 +82,7 @@ object Global extends GlobalSettings with LazyLogging{
     super.onError(request, ex)
   }
 
-  def ensurePostgresDatabase = {
+  def ensurePostgresDatabase = Future {
     logger.info("Running ensure_db.sh with POSTGRES_URL " + sys.env.get("POSTGRES_URL"))
 
     val processLogger = ProcessLogger(
@@ -94,8 +94,6 @@ object Global extends GlobalSettings with LazyLogging{
 
     if (result != 0)
       throw new Exception("Could not ensure Postgres database. Is postgres installed?")
-
-    Future.successful(())
   }
 
 }
