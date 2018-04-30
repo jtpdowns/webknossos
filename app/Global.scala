@@ -35,9 +35,11 @@ object Global extends GlobalSettings with LazyLogging{
     startActors(conf.underlying, app)
 
     ensurePostgresDatabase.onComplete { _ =>
+      logger.info("config value insertInitialData: " + conf.getBoolean("application.insertInitialData"))
       if (conf.getBoolean("application.insertInitialData") getOrElse false) {
+        logger.info("calling InitialData.insert..")
         InitialData.insert.futureBox.map {
-          case Full(_) => ()
+          case Full(_) => logger.info("Successfully inserted initial data")
           case Failure(msg, _, _) => logger.error("Error while inserting initial data: " + msg)
           case _ => logger.error("Error while inserting initial data")
         }
