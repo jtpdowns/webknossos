@@ -34,15 +34,23 @@ object Global extends GlobalSettings with LazyLogging{
     logger.info("Executing Global START")
     startActors(conf.underlying, app)
 
-    ensurePostgresDatabase.onComplete { _ =>
-      logger.info("config value insertInitialData: " + conf.getBoolean("application.insertInitialData"))
-      if (conf.getBoolean("application.insertInitialData") getOrElse false) {
-        logger.info("calling InitialData.insert..")
-        InitialData.insert.futureBox.map {
-          case Full(_) => logger.info("Successfully inserted initial data")
-          case Failure(msg, _, _) => logger.error("Error while inserting initial data: " + msg)
-          case _ => logger.error("Error while inserting initial data")
+    try {
+
+      ensurePostgresDatabase.onComplete { _ =>
+        logger.info("config value insertInitialData: " + conf.getBoolean("application.insertInitialData"))
+        if (conf.getBoolean("application.insertInitialData") getOrElse false) {
+          logger.info("calling InitialData.insert..")
+          InitialData.insert.futureBox.map {
+            case Full(_) => logger.info("Successfully inserted initial data")
+            case Failure(msg, _, _) => logger.error("Error while inserting initial data: " + msg)
+            case _ => logger.error("Error while inserting initial data")
+          }
         }
+      }
+
+    } catch {
+      case e: Exception => {
+        logger.error("exception while inserting initial data: " + e)
       }
     }
 
@@ -116,6 +124,7 @@ object InitialData extends GlobalDBAccess with FoxImplicits with LazyLogging {
 
   def insert: Fox[Unit] =
     for {
+      _ <- Future{ Thread.sleep(300) }
       _ <- insertOrganization
       _ <- insertTeams
       _ <- insertDefaultUser
