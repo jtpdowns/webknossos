@@ -4,6 +4,7 @@
 package utils
 
 
+import akka.event.slf4j.Logger
 import com.newrelic.api.agent.NewRelic
 import com.scalableminds.util.reactivemongo.DBAccessContext
 import com.scalableminds.util.tools.{Fox, FoxImplicits}
@@ -19,8 +20,8 @@ import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.{AbstractTable, Rep, TableQuery}
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
 
@@ -35,8 +36,14 @@ object ObjectId {
   def generate = fromBsonId(BSONObjectID.generate)
 }
 
-object SQLClient {
-  lazy val db: PostgresProfile.backend.Database = Database.forConfig("postgres", play.api.Play.configuration.underlying)
+object SQLClient extends LazyLogging {
+  lazy val db: PostgresProfile.backend.Database = {
+    val config = play.api.Play.configuration.underlying.getConfig("postgres")
+    logger.warn(s"starting db connection with config: ${config.toString} ...")
+    val db = Database.forConfig("postgres", play.api.Play.configuration.underlying)
+    logger.warn("started db connection")
+    db
+  }
 }
 
 trait SimpleSQLDAO extends FoxImplicits with LazyLogging {
