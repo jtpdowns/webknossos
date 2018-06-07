@@ -11,7 +11,7 @@ import models.project.{Project, ProjectDAO}
 import models.task.{TaskType, TaskTypeDAO}
 import models.team._
 import models.user._
-import net.liftweb.common.{Failure, Full}
+import net.liftweb.common.{Box, Failure, Full}
 import oxalis.cleanup.CleanUpService
 import oxalis.security.WebknossosSilhouette
 import play.api.Play.current
@@ -192,13 +192,13 @@ object InitialData extends GlobalDBAccess with FoxImplicits with LazyLogging {
     }.toFox
   }
 
-  def insertLocalDataStore: Fox[Any] = {
-    DataStoreDAO.findOneByName("localhost")(GlobalAccessContext).futureBox.map { maybeStore =>
+  def insertLocalDataStore: Fox[Unit] = {
+    DataStoreDAO.findOneByName("localhost")(GlobalAccessContext).futureBox.flatMap { maybeStore =>
       if (maybeStore.isEmpty) {
         val url = Play.configuration.getString("http.uri").getOrElse("http://localhost:9000")
         val key = Play.configuration.getString("datastore.key").getOrElse("something-secure")
         DataStoreDAO.insert(DataStore("localhost", url, WebKnossosStore, key))
-      }
+      } else Fox.successful(())
     }
   }
 }
